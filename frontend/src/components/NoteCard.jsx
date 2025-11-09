@@ -1,67 +1,177 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Edit3, Trash2, BookOpen } from 'lucide-react';
+import { Edit3, Trash2 } from 'lucide-react';
+import { FaRegFileAlt } from 'react-icons/fa';
 
-const NoteCard = ({ note, onEdit, onDelete }) => {
-  const truncateText = (text, maxLength = 120) => {
+const CARD_WIDTH = 260;
+const CARD_HEIGHT = 260;
+
+export const CARD_DIMENSIONS = { width: CARD_WIDTH, height: CARD_HEIGHT };
+
+const NoteCard = ({ note, dragConstraints, onEdit, onDelete }) => {
+  const truncateText = (text, maxLength = 140) => {
+    if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
 
+  const { words, completion } = useMemo(() => {
+    const content = note.content ?? '';
+    const wordCount = content.trim()
+      ? content.trim().split(/\s+/).filter(Boolean).length
+      : 0;
+
+    return {
+      words: wordCount,
+      completion: Math.min(100, Math.round((wordCount / 200) * 100)),
+    };
+  }, [note.content]);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="card p-6 flex flex-col relative overflow-hidden"
-    >
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-500/5 to-purple-600/5 rounded-full -translate-y-10 translate-x-10" />
-      
-      <div className="flex-1 relative z-10">
-        <div className="flex items-start justify-between mb-4">
-          <motion.div
-            className="p-2 bg-gradient-to-br from-blue-500/10 to-purple-600/10 rounded-lg"
-          >
-            <BookOpen className="w-5 h-5 text-blue-400" />
-          </motion.div>
+    <>
+      {/* ✅ DESKTOP CARD (sm and up) */}
+      <motion.div
+        drag
+        dragConstraints={dragConstraints}
+        dragElastic={0.2}
+        dragMomentum={true}
+        dragTransition={{
+          power: 0.4,
+          timeConstant: 300,
+          bounceDamping: 10,
+          bounceStiffness: 100,
+        }}
+        className="
+          hidden sm:block
+          relative overflow-hidden rounded-2xl cursor-grab active:cursor-grabbing
+          bg-zinc-700/80 border border-zinc-600 shadow-lg backdrop-blur-md
+          p-6
+        "
+        style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        whileDrag={{ scale: 1.02 }}
+      >
+        {/* Background lighting */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[-30%] right-[-10%] w-40 h-40 bg-blue-500/10 rounded-full blur-2xl" />
+          <div className="absolute bottom-[-40%] left-[-10%] w-48 h-48 bg-purple-500/10 rounded-full blur-3xl" />
         </div>
 
-        <h3 className="text-base font-bold text-gray-100 mb-3 line-clamp-2 leading-tight">
-          {note.title}
-        </h3>
-        <p className="text-gray-400 text-sm leading-relaxed mb-4 line-clamp-4">
-          {truncateText(note.content)}
-        </p>
-      </div>
+        <div className="relative z-10 flex flex-col h-full">
+          <div className="flex items-start justify-between">
+            <div className="p-3 bg-zinc-800/80 rounded-xl border border-zinc-600 shadow-inner">
+              <FaRegFileAlt className="w-6 h-6 text-white" />
+            </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="flex space-x-2"
-      >
-        <motion.button
-          onClick={() => onEdit(note)}
-          className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Edit3 className="w-3 h-3" />
-          <span className="text-xs font-semibold">Edit</span>
-        </motion.button>
+            <div className="flex gap-2">
+              <motion.button
+                onClick={() => onEdit(note)}
+                className="w-8 h-8 flex items-center justify-center rounded-full 
+                           bg-blue-500/20 border border-blue-400/40 text-blue-200"
+              >
+                <Edit3 className="w-4 h-4" />
+              </motion.button>
 
-        <motion.button
-          onClick={() => onDelete(note._id)}
-          className="flex-1 flex items-center justify-center space-x-1 py-2 px-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg transition-all duration-300 shadow-lg hover:shadow-xl"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Trash2 className="w-3 h-3" />
-          <span className="text-xs font-semibold">Delete</span>
-        </motion.button>
+              <motion.button
+                onClick={() => onDelete(note._id)}
+                className="w-8 h-8 flex items-center justify-center rounded-full 
+                           bg-red-500/20 border border-red-400/40 text-red-200"
+              >
+                <Trash2 className="w-4 h-4" />
+              </motion.button>
+            </div>
+          </div>
+
+          <div className="mt-5 space-y-3">
+            <h3 className="text-lg font-semibold text-white">{note.title}</h3>
+            <p className="text-sm text-zinc-300 line-clamp-4">
+              {truncateText(note.content)}
+            </p>
+          </div>
+
+          <div className="mt-auto pt-5">
+            <div className="flex items-center justify-between text-xs text-zinc-300">
+              <span className="font-semibold tracking-wide">WORD COUNT</span>
+              <span className="text-zinc-100 font-semibold">{words}</span>
+            </div>
+
+            <div className="mt-2 h-2 rounded-full bg-zinc-600 overflow-hidden">
+              <motion.div
+                className="h-full bg-gradient-to-r from-blue-400 to-purple-500"
+                animate={{ width: `${completion}%` }}
+              />
+            </div>
+
+            <div className="mt-3 w-full rounded-xl bg-zinc-800/70 border border-zinc-600
+                            flex items-center justify-center py-2 text-sm font-medium text-zinc-200">
+              {completion >= 100 ? 'Ready to publish' : 'Keep writing your story'}
+            </div>
+          </div>
+        </div>
       </motion.div>
-    </motion.div>
+
+      {/* ✅ MOBILE HORIZONTAL CARD (sm:hidden) */}
+      <motion.div
+        drag
+        dragConstraints={dragConstraints}
+        dragElastic={0.2}
+        dragMomentum={true}
+        dragTransition={{
+          power: 0.4,
+          timeConstant: 300,
+          bounceDamping: 10,
+          bounceStiffness: 100,
+        }}
+        className="
+          sm:hidden
+          relative overflow-hidden rounded-xl cursor-grab active:cursor-grabbing
+          bg-zinc-700/80 border border-zinc-600 shadow-lg backdrop-blur-md
+          flex items-start gap-4 p-3 w-[90vw] h-28
+        "
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        whileDrag={{ scale: 1.02 }}
+      >
+        <div className="p-2 bg-zinc-800/80 rounded-lg border border-zinc-600 shadow-inner">
+          <FaRegFileAlt className="w-5 h-5 text-white" />
+        </div>
+
+        <div className="flex flex-col flex-1 justify-center">
+          <h3 className="text-base font-semibold text-white line-clamp-1">
+            {note.title}
+          </h3>
+          <p className="text-xs text-zinc-300 line-clamp-1">
+            {truncateText(note.content, 40)}
+          </p>
+
+          <div className="mt-2 h-2 rounded-full bg-zinc-600 overflow-hidden">
+            <motion.div
+              className="h-full bg-gradient-to-r from-blue-400 to-purple-500"
+              animate={{ width: `${completion}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <motion.button
+            onClick={() => onEdit(note)}
+            className="w-7 h-7 flex items-center justify-center rounded-full 
+                       bg-blue-500/20 border border-blue-400/40 text-blue-200"
+          >
+            <Edit3 className="w-3 h-3" />
+          </motion.button>
+
+          <motion.button
+            onClick={() => onDelete(note._id)}
+            className="w-7 h-7 flex items-center justify-center rounded-full 
+                       bg-red-500/20 border border-red-400/40 text-red-200"
+          >
+            <Trash2 className="w-3 h-3" />
+          </motion.button>
+        </div>
+      </motion.div>
+    </>
   );
 };
 

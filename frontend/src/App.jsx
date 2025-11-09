@@ -1,30 +1,26 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
-import NoteForm from './components/NoteForm';
-import NotesList from './components/NotesList';
+import Background from './components/Background';
+import CreateNote from './pages/CreateNote';
+import NotesBoard from './pages/NotesBoard';
 import { ThemeProvider } from './contexts/ThemeContext';
 
 function App() {
-  const [refreshNotes, setRefreshNotes] = useState(0);
-
-  const handleNoteSaved = () => {
-    setRefreshNotes(prev => prev + 1);
-  };
-
   return (
     <ThemeProvider>
-      <div className="min-h-screen transition-colors duration-300">
-        <Header />
-        <main className="container mx-auto px-6 py-6 max-w-7xl">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div>
-              <NoteForm onNoteSaved={handleNoteSaved} />
-            </div>
-            <div>
-              <NotesList refreshTrigger={refreshNotes} />
-            </div>
-          </div>
-        </main>
+      <div className="relative min-h-screen overflow-x-hidden">
+        <Background />
+        <div className="relative z-10 flex min-h-screen flex-col">
+          <Header />
+          <main className="px-6 py-4 flex-1 w-full">
+            <Routes>
+              <Route path="/" element={<Navigate to="/create" replace />} />
+              <Route path="/create" element={<CreateNote />} />
+              <Route path="/board" element={<NotesBoard />} />
+            </Routes>
+          </main>
+        </div>
       </div>
     </ThemeProvider>
   );

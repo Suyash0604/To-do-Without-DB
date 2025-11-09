@@ -2,14 +2,16 @@ const express = require("express");
 const cors = require("cors");
 const connectToDB = require("./src/db/db");
 const app = express();
+require('dotenv').config();
 
+const CLIENT_URL = process.env.CLIENT_URL;
 const noteModel = require("./src/models/note.model");
 
 connectToDB();
 
 // Enable CORS for all routes
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173',CLIENT_URL],
   credentials: true
 }));
 
