@@ -1,31 +1,18 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Edit3, Trash2 } from 'lucide-react';
+import { Edit3, Trash2, Pin, Info } from 'lucide-react';
 import { FaRegFileAlt } from 'react-icons/fa';
 
-const CARD_WIDTH = 260;
-const CARD_HEIGHT = 260;
+const CARD_SIZE = 140;
 
-export const CARD_DIMENSIONS = { width: CARD_WIDTH, height: CARD_HEIGHT };
+export const CARD_DIMENSIONS = { width: CARD_SIZE, height: CARD_SIZE };
 
-const NoteCard = ({ note, dragConstraints, onEdit, onDelete }) => {
-  const truncateText = (text, maxLength = 140) => {
+const NoteCard = ({ note, dragConstraints, onEdit, onDelete, onViewDetails }) => {
+  const truncateText = (text, maxLength = 40) => {
     if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
-
-  const { words, completion } = useMemo(() => {
-    const content = note.content ?? '';
-    const wordCount = content.trim()
-      ? content.trim().split(/\s+/).filter(Boolean).length
-      : 0;
-
-    return {
-      words: wordCount,
-      completion: Math.min(100, Math.round((wordCount / 200) * 100)),
-    };
-  }, [note.content]);
 
   return (
     <>
@@ -43,75 +30,75 @@ const NoteCard = ({ note, dragConstraints, onEdit, onDelete }) => {
         }}
         className="
           hidden sm:block
-          relative overflow-hidden rounded-2xl cursor-grab active:cursor-grabbing
-          bg-zinc-700/80 border border-zinc-600 shadow-lg backdrop-blur-md
-          p-6
+          relative overflow-hidden rounded-lg cursor-grab active:cursor-grabbing
+          shadow-lg backdrop-blur-md
+          p-2
         "
-        style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        whileDrag={{ scale: 1.02 }}
+        style={{ 
+          width: CARD_SIZE, 
+          height: CARD_SIZE,
+          backgroundColor: note.color ? `${note.color}15` : '#3f3f4615',
+          borderColor: note.color || '#52525b',
+          borderWidth: '1px',
+          borderStyle: 'solid'
+        }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        whileDrag={{ scale: 1.05 }}
       >
-        {/* Background lighting */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-[-30%] right-[-10%] w-40 h-40 bg-blue-500/10 rounded-full blur-2xl" />
-          <div className="absolute bottom-[-40%] left-[-10%] w-48 h-48 bg-purple-500/10 rounded-full blur-3xl" />
-        </div>
-
         <div className="relative z-10 flex flex-col h-full">
-          <div className="flex items-start justify-between">
-            <div className="p-3 bg-zinc-800/80 rounded-xl border border-zinc-600 shadow-inner">
-              <FaRegFileAlt className="w-6 h-6 text-white" />
+          {/* Header with pin and actions */}
+          <div className="flex items-start justify-between mb-1.5">
+            <div className="flex items-center gap-1">
+              {note.isPinned && <Pin className="w-3 h-3 text-yellow-400 fill-yellow-400" />}
+              <div className="p-1 bg-zinc-800/80 rounded border border-zinc-600">
+                <FaRegFileAlt className="w-2.5 h-2.5 text-white" />
+              </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-1">
               <motion.button
-                onClick={() => onEdit(note)}
-                className="w-8 h-8 flex items-center justify-center rounded-full 
-                           bg-blue-500/20 border border-blue-400/40 text-blue-200"
+                onClick={(e) => { e.stopPropagation(); onViewDetails(note); }}
+                className="w-5 h-5 flex items-center justify-center rounded-full 
+                           bg-purple-500/20 border border-purple-400/40 text-purple-200"
+                title="View Details"
               >
-                <Edit3 className="w-4 h-4" />
-              </motion.button>
-
-              <motion.button
-                onClick={() => onDelete(note._id)}
-                className="w-8 h-8 flex items-center justify-center rounded-full 
-                           bg-red-500/20 border border-red-400/40 text-red-200"
-              >
-                <Trash2 className="w-4 h-4" />
+                <Info className="w-2.5 h-2.5" />
               </motion.button>
             </div>
           </div>
 
-          <div className="mt-5 space-y-3">
-            <h3 className="text-lg font-semibold text-white">{note.title}</h3>
-            <p className="text-sm text-zinc-300 line-clamp-4">
-              {truncateText(note.content)}
-            </p>
+          {/* Title Only */}
+          <div className="flex-1 flex items-center justify-center">
+            <h3 className="text-xs font-semibold text-white text-center line-clamp-3 leading-tight px-1">
+              {truncateText(note.title, 50)}
+            </h3>
           </div>
 
-          <div className="mt-auto pt-5">
-            <div className="flex items-center justify-between text-xs text-zinc-300">
-              <span className="font-semibold tracking-wide">WORD COUNT</span>
-              <span className="text-zinc-100 font-semibold">{words}</span>
-            </div>
+          {/* Bottom Actions */}
+          <div className="flex items-center justify-center gap-1.5 mt-auto pt-1.5">
+            <motion.button
+              onClick={(e) => { e.stopPropagation(); onEdit(note); }}
+              className="w-5 h-5 flex items-center justify-center rounded-full 
+                         bg-blue-500/20 border border-blue-400/40 text-blue-200"
+              title="Edit"
+            >
+              <Edit3 className="w-2.5 h-2.5" />
+            </motion.button>
 
-            <div className="mt-2 h-2 rounded-full bg-zinc-600 overflow-hidden">
-              <motion.div
-                className="h-full bg-gradient-to-r from-blue-400 to-purple-500"
-                animate={{ width: `${completion}%` }}
-              />
-            </div>
-
-            <div className="mt-3 w-full rounded-xl bg-zinc-800/70 border border-zinc-600
-                            flex items-center justify-center py-2 text-sm font-medium text-zinc-200">
-              {completion >= 100 ? 'Ready to publish' : 'Keep writing your story'}
-            </div>
+            <motion.button
+              onClick={(e) => { e.stopPropagation(); onDelete(note._id); }}
+              className="w-5 h-5 flex items-center justify-center rounded-full 
+                         bg-red-500/20 border border-red-400/40 text-red-200"
+              title="Delete"
+            >
+              <Trash2 className="w-2.5 h-2.5" />
+            </motion.button>
           </div>
         </div>
       </motion.div>
 
-      {/* ✅ MOBILE HORIZONTAL CARD (sm:hidden) */}
+      {/* ✅ MOBILE CARD (sm:hidden) */}
       <motion.div
         drag
         dragConstraints={dragConstraints}
@@ -125,50 +112,66 @@ const NoteCard = ({ note, dragConstraints, onEdit, onDelete }) => {
         }}
         className="
           sm:hidden
-          relative overflow-hidden rounded-xl cursor-grab active:cursor-grabbing
-          bg-zinc-700/80 border border-zinc-600 shadow-lg backdrop-blur-md
-          flex items-start gap-4 p-3 w-[90vw] h-28
+          relative overflow-hidden rounded-lg cursor-grab active:cursor-grabbing
+          shadow-lg backdrop-blur-md
+          p-2
         "
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        whileDrag={{ scale: 1.02 }}
+        style={{ 
+          width: CARD_SIZE, 
+          height: CARD_SIZE,
+          backgroundColor: note.color ? `${note.color}15` : '#3f3f4615',
+          borderColor: note.color || '#52525b',
+          borderWidth: '1px',
+          borderStyle: 'solid'
+        }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        whileDrag={{ scale: 1.05 }}
       >
-        <div className="p-2 bg-zinc-800/80 rounded-lg border border-zinc-600 shadow-inner">
-          <FaRegFileAlt className="w-5 h-5 text-white" />
-        </div>
+        <div className="relative z-10 flex flex-col h-full">
+          <div className="flex items-start justify-between mb-1.5">
+            <div className="flex items-center gap-1">
+              {note.isPinned && <Pin className="w-3 h-3 text-yellow-400 fill-yellow-400" />}
+              <div className="p-1 bg-zinc-800/80 rounded border border-zinc-600">
+                <FaRegFileAlt className="w-2.5 h-2.5 text-white" />
+              </div>
+            </div>
 
-        <div className="flex flex-col flex-1 justify-center">
-          <h3 className="text-base font-semibold text-white line-clamp-1">
-            {note.title}
-          </h3>
-          <p className="text-xs text-zinc-300 line-clamp-1">
-            {truncateText(note.content, 40)}
-          </p>
-
-          <div className="mt-2 h-2 rounded-full bg-zinc-600 overflow-hidden">
-            <motion.div
-              className="h-full bg-gradient-to-r from-blue-400 to-purple-500"
-              animate={{ width: `${completion}%` }}
-            />
+            <motion.button
+              onClick={(e) => { e.stopPropagation(); onViewDetails(note); }}
+              className="w-5 h-5 flex items-center justify-center rounded-full 
+                         bg-purple-500/20 border border-purple-400/40 text-purple-200"
+              title="View Details"
+            >
+              <Info className="w-2.5 h-2.5" />
+            </motion.button>
           </div>
-        </div>
 
-        <div className="flex flex-col gap-2">
-          <motion.button
-            onClick={() => onEdit(note)}
-            className="w-7 h-7 flex items-center justify-center rounded-full 
-                       bg-blue-500/20 border border-blue-400/40 text-blue-200"
-          >
-            <Edit3 className="w-3 h-3" />
-          </motion.button>
+          <div className="flex-1 flex items-center justify-center">
+            <h3 className="text-xs font-semibold text-white text-center line-clamp-3 leading-tight px-1">
+              {truncateText(note.title, 50)}
+            </h3>
+          </div>
 
-          <motion.button
-            onClick={() => onDelete(note._id)}
-            className="w-7 h-7 flex items-center justify-center rounded-full 
-                       bg-red-500/20 border border-red-400/40 text-red-200"
-          >
-            <Trash2 className="w-3 h-3" />
-          </motion.button>
+          <div className="flex items-center justify-center gap-1.5 mt-auto pt-1.5">
+            <motion.button
+              onClick={(e) => { e.stopPropagation(); onEdit(note); }}
+              className="w-5 h-5 flex items-center justify-center rounded-full 
+                         bg-blue-500/20 border border-blue-400/40 text-blue-200"
+              title="Edit"
+            >
+              <Edit3 className="w-2.5 h-2.5" />
+            </motion.button>
+
+            <motion.button
+              onClick={(e) => { e.stopPropagation(); onDelete(note._id); }}
+              className="w-5 h-5 flex items-center justify-center rounded-full 
+                         bg-red-500/20 border border-red-400/40 text-red-200"
+              title="Delete"
+            >
+              <Trash2 className="w-2.5 h-2.5" />
+            </motion.button>
+          </div>
         </div>
       </motion.div>
     </>

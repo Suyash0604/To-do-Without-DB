@@ -23,10 +23,20 @@ app.get("/", (req, res) => {
 
 app.post("/create", async (req, res) => {
   try {
-    let { title, content } = req.body;
+    let { title, content, priority, category, tags, noteDate, dueDate, status, color, isPinned, reminderDate, link } = req.body;
     const newNote = await noteModel.create({
       title: title,
       content: content,
+      priority: priority || 'medium',
+      category: category || '',
+      tags: tags || [],
+      noteDate: noteDate ? new Date(noteDate) : null,
+      dueDate: dueDate ? new Date(dueDate) : null,
+      status: status || 'pending',
+      color: color || '#6366f1',
+      isPinned: isPinned || false,
+      reminderDate: reminderDate ? new Date(reminderDate) : null,
+      link: link || ''
     });
     res.json({
       message: "Note created successfully",
@@ -42,7 +52,23 @@ app.post("/create", async (req, res) => {
 
 app.get("/notes", async (req, res) => {
   try {
-    let notes = await noteModel.find();
+    const { date } = req.query;
+    let query = {};
+    
+    if (date) {
+      // Filter by noteDate (date-wise to-do list)
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      query.noteDate = {
+        $gte: startOfDay,
+        $lte: endOfDay
+      };
+    }
+    
+    let notes = await noteModel.find(query);
     res.json({
       notes: notes,
     });
@@ -79,16 +105,27 @@ app.delete("/delete/:id", async (req, res) => {
 app.patch("/update/:id", async (req, res) => {
   try {
     let id = req.params.id;
-    let { title, content } = req.body;
+    let { title, content, priority, category, tags, noteDate, dueDate, status, color, isPinned, reminderDate, link } = req.body;
+
+    const updateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (content !== undefined) updateData.content = content;
+    if (priority !== undefined) updateData.priority = priority;
+    if (category !== undefined) updateData.category = category;
+    if (tags !== undefined) updateData.tags = tags;
+    if (noteDate !== undefined) updateData.noteDate = noteDate ? new Date(noteDate) : null;
+    if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
+    if (status !== undefined) updateData.status = status;
+    if (color !== undefined) updateData.color = color;
+    if (isPinned !== undefined) updateData.isPinned = isPinned;
+    if (reminderDate !== undefined) updateData.reminderDate = reminderDate ? new Date(reminderDate) : null;
+    if (link !== undefined) updateData.link = link;
 
     const updatedNote = await noteModel.findOneAndUpdate(
       {
         _id: id,
       },
-      {
-        title: title,
-        content: content
-      },
+      updateData,
       { new: true }
     );
 

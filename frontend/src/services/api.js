@@ -42,9 +42,10 @@ export const createNote = async (noteData) => {
   }
 };
 
-export const getNotes = async () => {
+export const getNotes = async (date = null) => {
   try {
-    const response = await api.get('/notes');
+    const params = date ? { params: { date } } : {};
+    const response = await api.get('/notes', params);
     return response.notes || [];
   } catch (error) {
     throw new Error('Failed to fetch notes');
